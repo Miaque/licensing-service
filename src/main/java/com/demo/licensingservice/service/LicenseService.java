@@ -26,12 +26,22 @@ public class LicenseService {
         return license;
     }
 
-    public List<License> getLicenseByOrg(String organizationId) {
-        return licenseRepository.findByOrOrganizationId(organizationId);
+    public List<License> getLicensesByOrg(String organizationId) {
+        return licenseRepository.findByOrganizationId(organizationId);
     }
 
     public void saveLicense(License license) {
         license.setLicenseId(UUID.randomUUID().toString());
+
         licenseRepository.save(license);
+
+    }
+
+    public void updateLicense(License license) {
+        licenseRepository.save(license);
+    }
+
+    public void deleteLicense(License license) {
+        licenseRepository.delete(license);
     }
 }
