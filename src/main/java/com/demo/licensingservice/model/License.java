@@ -2,10 +2,7 @@ package com.demo.licensingservice.model;
 
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @Data
@@ -19,6 +16,18 @@ public class License implements Serializable {
 
     @Column(name = "organization_id", nullable = false)
     private String organizationId;
+
+    @Transient
+    private String organizationName ="";
+
+    @Transient
+    private String contactName ="";
+
+    @Transient
+    private String contactPhone ="";
+
+    @Transient
+    private String contactEmail ="";
 
     @Column(name = "product_name", nullable = false)
     private String productName;
