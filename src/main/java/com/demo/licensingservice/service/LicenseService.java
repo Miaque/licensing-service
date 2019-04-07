@@ -7,11 +7,15 @@ import com.demo.licensingservice.config.ServiceConfig;
 import com.demo.licensingservice.model.License;
 import com.demo.licensingservice.model.Organization;
 import com.demo.licensingservice.repository.LicenseRepository;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 @Log
@@ -69,8 +73,62 @@ public class LicenseService {
         return license;
     }
 
+    private void randomlyRunLong() {
+        Random random = new Random();
+
+        int randomNum = random.nextInt((3 - 1) + 1) + 1;
+
+        if (randomNum == 3) sleep();
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(11000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*// 后备处理
+    @HystrixCommand(fallbackMethod = "buildFallbackLicenseList")
     public List<License> getLicensesByOrg(String organizationId) {
+        randomlyRunLong();
+
         return licenseRepository.findByOrganizationId(organizationId);
+    }*/
+
+    /*@HystrixCommand(
+            commandProperties = {
+                    // 定制断路器超时时间
+                    @HystrixProperty(name="execution.isolation.thread.timeoutInMilliseconds", value = "12000")
+            }
+    )
+    public List<License> getLicensesByOrg(String organizationId) {
+        randomlyRunLong();
+
+        return licenseRepository.findByOrganizationId(organizationId);
+    }*/
+
+    @HystrixCommand(fallbackMethod = "buildFallbackLicenseList", threadPoolKey = "licenseByOrgThreadPool",
+            threadPoolProperties = {
+                @HystrixProperty(name="coreSize", value = "30"),
+                @HystrixProperty(name = "maxQueueSize", value = "10")}
+    )
+    public List<License> getLicensesByOrg(String organizationId) {
+        randomlyRunLong();
+
+        return licenseRepository.findByOrganizationId(organizationId);
+    }
+
+    private List<License> buildFallbackLicenseList(String organizationId) {
+        List<License> fallbackList = new ArrayList<>();
+        License license = new License();
+        license.setLicenseId("0000000-00-00000");
+        license.setOrganizationId(organizationId);
+        license.setProductName("Sorry no licensing information currently available");
+
+        fallbackList.add(license);
+        return fallbackList;
     }
 
     public void saveLicense(License license) {
